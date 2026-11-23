@@ -1,0 +1,27 @@
+rules_version = '2';
+
+// LOCAL EMULATOR FIRESTORE RULES ONLY (used via firebase.local.json).
+// Never deployed by `firebase deploy`.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isLocalOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /users/{uid}/projects/{projectId} {
+      allow read, write: if isLocalOwner(uid);
+    }
+
+    match /users/{uid}/tasks/{taskId} {
+      allow read, write: if isLocalOwner(uid);
+    }
+
+    match /users/{uid}/timeEntries/{entryId} {
+      allow read, write: if isLocalOwner(uid);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

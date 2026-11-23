@@ -1,0 +1,98 @@
+rules_version = '2';
+
+// STRICT REMOTE / PRODUCTION FIRESTORE SECURITY RULES
+// Deployed by `firebase deploy --only firestore:rules` (via firebase.json).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isVerifiedGoogleOwner(uid) {
+      return request.auth != null
+        && request.auth.uid == uid
+        && request.auth.token.email_verified == true
+        && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+
+    function validCurrency(val) {
+      return val is string && (val == 'USD' || val == 'INR');
+    }
+
+    function validProject(data) {
+      return data.keys().hasOnly(['name', 'color', 'archived', 'createdAt', 'hourlyRate', 'currency'])
+        && data.keys().hasAll(['name', 'color', 'archived', 'createdAt', 'hourlyRate', 'currency'])
+        && data.name is string
+        && data.name.size() >= 1
+        && data.name.size() <= 80
+        && data.color is string
+        && data.color.matches('^#[0-9a-fA-F]{6}$')
+        && data.archived is bool
+        && data.createdAt is timestamp
+        && validCurrency(data.currency)
+        && (data.hourlyRate == null || (data.hourlyRate is number && data.hourlyRate >= 0));
+    }
+
+    function validTask(data) {
+      return data.keys().hasOnly(['projectId', 'title', 'archived', 'createdAt', 'billingMode', 'rate', 'currency'])
+        && data.keys().hasAll(['projectId', 'title', 'archived', 'createdAt', 'billingMode', 'rate', 'currency'])
+        && data.projectId is string
+        && data.projectId.size() >= 1
+        && data.projectId.size() <= 128
+        && data.title is string
+        && data.title.size() >= 1
+        && data.title.size() <= 120
+        && data.archived is bool
+        && data.createdAt is timestamp
+        && data.billingMode is string
+        && (data.billingMode == 'none' || data.billingMode == 'hourly' || data.billingMode == 'fixed')
+        && validCurrency(data.currency)
+        && (
+          (data.billingMode == 'none' && data.rate == null)
+          || (data.billingMode != 'none' && data.rate is number && data.rate >= 0)
+        );
+    }
+
+    function validTimeEntry(data) {
+      return data.keys().hasOnly(['projectId', 'taskId', 'note', 'startTime', 'endTime', 'durationSec'])
+        && data.keys().hasAll(['projectId', 'taskId', 'note', 'startTime', 'endTime', 'durationSec'])
+        && data.projectId is string
+        && data.projectId.size() >= 1
+        && data.projectId.size() <= 128
+        && data.taskId is string
+        && data.taskId.size() >= 1
+        && data.taskId.size() <= 128
+        && data.note is string
+        && data.note.size() <= 500
+        && data.startTime is timestamp
+        && (
+          (data.endTime == null && data.durationSec == null)
+          || (
+            data.endTime is timestamp
+            && data.endTime >= data.startTime
+            && data.durationSec is number
+            && data.durationSec >= 0
+          )
+        );
+    }
+
+    match /users/{uid}/projects/{projectId} {
+      allow read: if isVerifiedGoogleOwner(uid);
+      allow create, update: if isVerifiedGoogleOwner(uid) && validProject(request.resource.data);
+      allow delete: if isVerifiedGoogleOwner(uid);
+    }
+
+    match /users/{uid}/tasks/{taskId} {
+      allow read: if isVerifiedGoogleOwner(uid);
+      allow create, update: if isVerifiedGoogleOwner(uid) && validTask(request.resource.data);
+      allow delete: if isVerifiedGoogleOwner(uid);
+    }
+
+    match /users/{uid}/timeEntries/{entryId} {
+      allow read: if isVerifiedGoogleOwner(uid);
+      allow create, update: if isVerifiedGoogleOwner(uid) && validTimeEntry(request.resource.data);
+      allow delete: if isVerifiedGoogleOwner(uid);
+    }
+
+    // Default deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
