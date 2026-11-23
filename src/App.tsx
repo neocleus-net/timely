@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ActiveTimersBar } from './components/ActiveTimersBar';
 import { AuthScreen } from './components/AuthScreen';
+import { BrandLogo } from './components/BrandLogo';
 import { CustomRangeView } from './components/CustomRangeView';
 import { DailyView } from './components/DailyView';
 import { Footer } from './components/Footer';
@@ -126,6 +127,7 @@ export function App() {
     <div className="app-shell">
       <header className="topbar">
         <div className="topbar-left">
+          <BrandLogo size={26} />
           <span className="brand">Timely</span>
           {USE_EMULATORS && <span className="env-pill env-local">Local Emulators</span>}
         </div>

@@ -1,5 +1,6 @@
 import { USE_EMULATORS } from '../lib/firebase';
 import type { Theme } from '../hooks/useTheme';
+import { BrandLogo } from './BrandLogo';
 import { Footer } from './Footer';
 
 interface AuthScreenProps {
@@ -33,10 +34,21 @@ export function AuthScreen({
           </button>
         </div>
 
-        <h1 className="auth-title">Timely</h1>
-        <p className="auth-subtitle">
-          Minimal time tracking across multiple projects and concurrent tasks.
-        </p>
+        <div className="auth-hero">
+          <BrandLogo size={44} />
+          <div>
+            <h1 className="auth-title">Timely</h1>
+            <p className="auth-subtitle">
+              Track multiple projects, concurrent tasks &amp; real-time earnings.
+            </p>
+          </div>
+        </div>
+
+        <div className="auth-feature-pills">
+          <span className="feature-pill">✦ Concurrent Timers</span>
+          <span className="feature-pill">✦ Live USD &amp; INR</span>
+          <span className="feature-pill">✦ Daily · Weekly · Monthly</span>
+        </div>
 
         <button
           type="button"
