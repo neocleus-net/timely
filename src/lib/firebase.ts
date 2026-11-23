@@ -11,7 +11,12 @@ import {
   type Firestore,
 } from 'firebase/firestore';
 
-export const USE_EMULATORS: boolean = import.meta.env.VITE_USE_EMULATORS === 'true';
+const isLocalHost: boolean =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+export const USE_EMULATORS: boolean =
+  import.meta.env.DEV && isLocalHost && import.meta.env.VITE_USE_EMULATORS === 'true';
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,

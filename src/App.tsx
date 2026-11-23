@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActiveTimersBar } from './components/ActiveTimersBar';
 import { AuthScreen } from './components/AuthScreen';
 import { BrandLogo } from './components/BrandLogo';
@@ -7,7 +7,9 @@ import { DailyView } from './components/DailyView';
 import { Footer } from './components/Footer';
 import { MonthlyView } from './components/MonthlyView';
 import { PeriodNavigator } from './components/PeriodNavigator';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { ProjectTaskPanel } from './components/ProjectTaskPanel';
+import { TermsOfService } from './components/TermsOfService';
 import { WeeklyView } from './components/WeeklyView';
 import { useAuth } from './hooks/useAuth';
 import { useNow } from './hooks/useNow';
@@ -32,10 +34,29 @@ import {
 import type { DateRange, ViewPeriod } from './types/models';
 
 export function App() {
+  const [pathname, setPathname] = useState<string>(() => window.location.pathname);
   const authState = useAuth();
   const { theme, toggleTheme } = useTheme();
   const data = useTimelyData(authState.user?.uid ?? null);
   const now = useNow(data.activeEntries.length > 0);
+
+  useEffect(() => {
+    const onPopState = () => {
+      setPathname(window.location.pathname);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, []);
+
+  const navigate = useCallback((to: string) => {
+    if (window.location.pathname !== to) {
+      window.history.pushState({}, '', to);
+      setPathname(to);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const [period, setPeriod] = useState<ViewPeriod>('daily');
   const [anchorDate, setAnchorDate] = useState<Date>(() => startOfDay(new Date()));
@@ -103,6 +124,28 @@ export function App() {
     URL.revokeObjectURL(url);
   }
 
+  if (pathname === '/privacy' || pathname === '/privacy/') {
+    return (
+      <PrivacyPolicy
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onBack={() => navigate('/')}
+        onOpenTerms={() => navigate('/terms')}
+      />
+    );
+  }
+
+  if (pathname === '/terms' || pathname === '/terms/') {
+    return (
+      <TermsOfService
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onBack={() => navigate('/')}
+        onOpenPrivacy={() => navigate('/privacy')}
+      />
+    );
+  }
+
   if (authState.loading) {
     return (
       <div className="auth-shell">
@@ -119,6 +162,8 @@ export function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         onSignIn={authState.signInWithGoogle}
+        onOpenPrivacy={() => navigate('/privacy')}
+        onOpenTerms={() => navigate('/terms')}
       />
     );
   }
@@ -260,7 +305,10 @@ export function App() {
         </main>
       </div>
 
-      <Footer />
+      <Footer
+        onOpenPrivacy={() => navigate('/privacy')}
+        onOpenTerms={() => navigate('/terms')}
+      />
     </div>
   );
 }
